@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Users, Car, Zap, TreePine, Home, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, Car, Zap, TreePine, Home, AlertTriangle, MapPin, MessageSquare } from "lucide-react";
 
 const StatsOverview = () => {
   const cityStats = [
