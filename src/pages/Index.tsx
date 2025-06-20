@@ -1,14 +1,14 @@
-
 import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, BarChart3, Home, Zap, MessageSquare, Users, TreePine, Car } from "lucide-react";
+import { MapPin, BarChart3, Home, Zap, MessageSquare, Users, TreePine, Car, Database } from "lucide-react";
 import InteractiveMap from '@/components/InteractiveMap';
 import MobilityDashboard from '@/components/MobilityDashboard';
 import QualityScoring from '@/components/QualityScoring';
 import EnergyDashboard from '@/components/EnergyDashboard';
 import CitizenReporting from '@/components/CitizenReporting';
 import StatsOverview from '@/components/StatsOverview';
+import RealDataDashboard from '@/components/RealDataDashboard';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -39,10 +39,14 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-8 bg-white/50 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-7 mb-8 bg-white/50 backdrop-blur-sm">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Übersicht</span>
+            </TabsTrigger>
+            <TabsTrigger value="realdata" className="flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              <span className="hidden sm:inline">Echte Daten</span>
             </TabsTrigger>
             <TabsTrigger value="map" className="flex items-center gap-2">
               <MapPin className="w-4 h-4" />
@@ -68,6 +72,10 @@ const Index = () => {
 
           <TabsContent value="overview" className="space-y-6">
             <StatsOverview />
+          </TabsContent>
+
+          <TabsContent value="realdata" className="space-y-6">
+            <RealDataDashboard />
           </TabsContent>
 
           <TabsContent value="map" className="space-y-6">
