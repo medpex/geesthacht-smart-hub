@@ -46,7 +46,7 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="realdata" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
-              <span className="hidden sm:inline">Echte Daten</span>
+              <span className="hidden sm:inline">Live-Daten</span>
             </TabsTrigger>
             <TabsTrigger value="map" className="flex items-center gap-2">
               <MapPin className="w-4 h-4" />
@@ -106,8 +106,8 @@ const Index = () => {
       <footer className="bg-white/50 backdrop-blur-sm border-t border-blue-200 mt-12">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center text-sm text-gray-600">
-            <p>Datenquelle: <a href="https://www.govdata.de/suche?q=Geesthacht" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">GovData.de</a></p>
-            <p className="mt-1">Smart City Dashboard für transparente Stadtentwicklung</p>
+            <p>Live-Datenquellen: <a href="https://www.govdata.de/suche?q=Geesthacht" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">GovData.de</a> • <a href="https://opendata.schleswig-holstein.de" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Open Data SH</a> • <a href="https://sapos.geonord.de" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">SAPOS GeoNord</a></p>
+            <p className="mt-1">Multi-Source Smart City Dashboard mit Live-Integration</p>
           </div>
         </div>
       </footer>

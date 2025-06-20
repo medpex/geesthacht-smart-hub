@@ -3,66 +3,55 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Database, Download, ExternalLink, Calendar, Tag, Building } from "lucide-react";
-import { CkanApiService, CkanPackage, CkanResource } from "@/services/ckanApi";
+import { Database, Satellite, BarChart3, Map, Refresh } from "lucide-react";
+import { CkanApiService, CkanPackage } from "@/services/ckanApi";
+import { LiveDataService, StatistikNordData, WMSLayer } from "@/services/liveDataService";
+import LiveDashboard from "./LiveDashboard";
 
 const RealDataDashboard = () => {
   const [packages, setPackages] = useState<CkanPackage[]>([]);
+  const [shPackages, setShPackages] = useState<CkanPackage[]>([]);
+  const [statistikData, setStatistikData] = useState<StatistikNordData[]>([]);
+  const [wmsLayers, setWmsLayers] = useState<WMSLayer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPackage, setSelectedPackage] = useState<CkanPackage | null>(null);
-  const [resourceData, setResourceData] = useState<any>(null);
-  const [loadingResource, setLoadingResource] = useState(false);
+  const [activeTab, setActiveTab] = useState("live");
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchGeesthachtData();
+    fetchAllData();
   }, []);
 
-  const fetchGeesthachtData = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
-      const data = await CkanApiService.searchPackages('Geesthacht');
-      setPackages(data);
-      console.log('Gefundene Datensätze:', data);
+      
+      const [govData, shData, statistik, wms] = await Promise.all([
+        CkanApiService.searchPackages('Geesthacht'),
+        LiveDataService.getShleswickHolsteinData('Geesthacht'),
+        LiveDataService.getStatistikNordData(),
+        LiveDataService.getWMSLayers()
+      ]);
+      
+      setPackages(govData);
+      setShPackages(shData);
+      setStatistikData(statistik);
+      setWmsLayers(wms);
       
       toast({
-        title: "Daten geladen",
-        description: `${data.length} Datensätze für Geesthacht gefunden`,
+        title: "Alle Datenquellen geladen",
+        description: `${govData.length + shData.length} Datensätze, ${wms.length} WMS-Layer gefunden`,
       });
     } catch (error) {
       console.error('Fehler beim Laden der Daten:', error);
       toast({
         title: "Fehler",
-        description: "Daten konnten nicht geladen werden",
+        description: "Einige Datenquellen konnten nicht geladen werden",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadResourceData = async (resource: CkanResource) => {
-    try {
-      setLoadingResource(true);
-      const data = await CkanApiService.getResourceData(resource.url);
-      setResourceData(data);
-      console.log('Ressource-Daten:', data);
-      
-      toast({
-        title: "Ressource geladen",
-        description: `Daten für ${resource.name} erfolgreich abgerufen`,
-      });
-    } catch (error) {
-      console.error('Fehler beim Laden der Ressource:', error);
-      toast({
-        title: "Fehler",
-        description: "Ressource konnte nicht geladen werden",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingResource(false);
     }
   };
 
@@ -72,13 +61,10 @@ const RealDataDashboard = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <Database className="w-12 h-12 mx-auto mb-4 text-blue-600 animate-pulse" />
-            <p className="text-lg font-medium">Lade echte Daten von GovData.de...</p>
-            <Progress value={undefined} className="w-64 mt-4" />
-          </div>
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <Database className="w-12 h-12 mx-auto mb-4 text-blue-600 animate-pulse" />
+          <p className="text-lg font-medium">Lade alle Datenquellen...</p>
         </div>
       </div>
     );
@@ -86,177 +72,169 @@ const RealDataDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header mit Datenquellen-Übersicht */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="w-5 h-5" />
-            Echte Daten aus GovData.de
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">
-                Gefundene Datensätze für Geesthacht: <span className="font-bold">{packages.length}</span>
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Quelle: CKAN REST API - https://www.govdata.de/ckan/api/3/
-              </p>
-            </div>
-            <Button onClick={fetchGeesthachtData} variant="outline" size="sm">
+            <CardTitle className="flex items-center gap-2">
+              <Database className="w-5 h-5" />
+              Multi-Source Daten-Integration
+            </CardTitle>
+            <Button onClick={fetchAllData} variant="outline" size="sm">
+              <Refresh className="w-4 h-4 mr-2" />
               Aktualisieren
             </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{packages.length}</div>
+              <p className="text-sm text-gray-600">GovData.de</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{shPackages.length}</div>
+              <p className="text-sm text-gray-600">Open Data SH</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{statistikData.length}</div>
+              <p className="text-sm text-gray-600">Statistik Nord</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{wmsLayers.length}</div>
+              <p className="text-sm text-gray-600">WMS Services</p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Datensätze Liste */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Verfügbare Datensätze</h3>
-          {packages.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Building className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600">Keine Datensätze gefunden</p>
-              </CardContent>
-            </Card>
-          ) : (
-            packages.map((pkg) => (
-              <Card 
-                key={pkg.id} 
-                className={`cursor-pointer transition-all ${
-                  selectedPackage?.id === pkg.id ? 'ring-2 ring-blue-500' : 'hover:shadow-md'
-                }`}
-                onClick={() => setSelectedPackage(pkg)}
-              >
+      {/* Tabs für verschiedene Datenquellen */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="live" className="flex items-center gap-2">
+            <Satellite className="w-4 h-4" />
+            Live-Daten
+          </TabsTrigger>
+          <TabsTrigger value="govdata" className="flex items-center gap-2">
+            <Database className="w-4 h-4" />
+            GovData
+          </TabsTrigger>
+          <TabsTrigger value="sh-data" className="flex items-center gap-2">
+            <Database className="w-4 h-4" />
+            SH-Portal
+          </TabsTrigger>
+          <TabsTrigger value="statistik" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Statistik
+          </TabsTrigger>
+          <TabsTrigger value="wms" className="flex items-center gap-2">
+            <Map className="w-4 h-4" />
+            WMS/GIS
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="live">
+          <LiveDashboard />
+        </TabsContent>
+
+        <TabsContent value="govdata">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {packages.map((pkg) => (
+              <Card key={pkg.id}>
                 <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">{pkg.title}</h4>
-                    {pkg.organization && (
-                      <Badge variant="outline" className="text-xs">
-                        {pkg.organization.title}
-                      </Badge>
-                    )}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(pkg.metadata_created)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Database className="w-3 h-3" />
-                        {pkg.resources.length} Ressourcen
-                      </div>
-                    </div>
-                    {pkg.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {pkg.tags.slice(0, 3).map((tag) => (
-                          <Badge key={tag.name} variant="secondary" className="text-xs">
-                            {tag.display_name}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                  <h4 className="font-medium text-sm mb-2">{pkg.title}</h4>
+                  {pkg.organization && (
+                    <Badge variant="outline" className="text-xs mb-2">
+                      {pkg.organization.title}
+                    </Badge>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    {formatDate(pkg.metadata_created)} • {pkg.resources.length} Ressourcen
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="sh-data">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {shPackages.map((pkg) => (
+              <Card key={pkg.id}>
+                <CardContent className="p-4">
+                  <h4 className="font-medium text-sm mb-2">{pkg.title}</h4>
+                  {pkg.organization && (
+                    <Badge variant="secondary" className="text-xs mb-2">
+                      SH: {pkg.organization.title}
+                    </Badge>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    {formatDate(pkg.metadata_created)} • {pkg.resources.length} Ressourcen
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="statistik">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {statistikData.map((data) => (
+              <Card key={data.year}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{data.year}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Einwohner:</span>
+                    <span className="font-medium">{data.population.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Betriebe:</span>
+                    <span className="font-medium">{data.businesses}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Arbeitslosigkeit:</span>
+                    <span className="font-medium">{data.unemployment_rate}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Energie:</span>
+                    <span className="font-medium">{data.energy_consumption} GWh</span>
                   </div>
                 </CardContent>
               </Card>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        </TabsContent>
 
-        {/* Details Panel */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Datensatz Details</h3>
-          {selectedPackage ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">{selectedPackage.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {selectedPackage.notes && (
-                  <div>
-                    <h5 className="font-medium text-sm mb-2">Beschreibung</h5>
-                    <p className="text-sm text-gray-600">{selectedPackage.notes}</p>
-                  </div>
-                )}
-
-                <div>
-                  <h5 className="font-medium text-sm mb-2">Ressourcen ({selectedPackage.resources.length})</h5>
-                  <div className="space-y-2">
-                    {selectedPackage.resources.map((resource) => (
-                      <div 
-                        key={resource.id} 
-                        className="p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{resource.name}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                {resource.format}
-                              </Badge>
-                              {resource.last_modified && (
-                                <span className="text-xs text-gray-500">
-                                  {formatDate(resource.last_modified)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                loadResourceData(resource);
-                              }}
-                              disabled={loadingResource}
-                            >
-                              <Download className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(resource.url, '_blank');
-                              }}
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {resourceData && (
-                  <div>
-                    <h5 className="font-medium text-sm mb-2">Vorschau der Daten</h5>
-                    <div className="p-3 bg-gray-50 rounded-lg max-h-64 overflow-auto">
-                      <pre className="text-xs text-gray-700">
-                        {typeof resourceData === 'string' 
-                          ? resourceData.substring(0, 1000) + (resourceData.length > 1000 ? '...' : '')
-                          : JSON.stringify(resourceData, null, 2).substring(0, 1000)
-                        }
-                      </pre>
+        <TabsContent value="wms">
+          <div className="space-y-4">
+            {wmsLayers.map((layer) => (
+              <Card key={layer.name}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{layer.title}</h4>
+                      <p className="text-sm text-gray-600">{layer.name}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Bounds: {layer.bounds.join(', ')}
+                      </p>
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(layer.url, '_blank')}
+                    >
+                      <Map className="w-4 h-4 mr-2" />
+                      WMS öffnen
+                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Database className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600">Wählen Sie einen Datensatz aus, um Details anzuzeigen</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
