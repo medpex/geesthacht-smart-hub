@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Database, Satellite, BarChart3, Map, Refresh } from "lucide-react";
+import { Database, Satellite, BarChart3, Map, RefreshCw } from "lucide-react";
 import { CkanApiService, CkanPackage } from "@/services/ckanApi";
 import { LiveDataService, StatistikNordData, WMSLayer } from "@/services/liveDataService";
 import LiveDashboard from "./LiveDashboard";
@@ -81,7 +80,7 @@ const RealDataDashboard = () => {
               Multi-Source Daten-Integration
             </CardTitle>
             <Button onClick={fetchAllData} variant="outline" size="sm">
-              <Refresh className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4 mr-2" />
               Aktualisieren
             </Button>
           </div>
